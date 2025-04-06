@@ -26,4 +26,5 @@ __kernel void upd_pressure(
       sum += press_i[height*y + x+1];
    }
    press_o[height*y + x] = sum/neighbours;
+   /* TODO: fix bug about the sim doing wierd stuff by not going down */
 }

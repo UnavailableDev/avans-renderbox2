@@ -2,6 +2,7 @@ import numpy as np
 import pyopencl as cl
 from config import *
 
+import time
 
 class Simulator:
     def __init__(self, map, plt):
@@ -15,8 +16,10 @@ class Simulator:
 
     def update_sim(self, frame):
         program.upd_pressure(queue, (num_cells,), None, self.press_buf_i, self.press_buf_o, np.int32(WIDTH), np.int32(HEIGHT), np.float32(1))
+        cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o).wait()
+        cl.enqueue_copy(queue, self.press, self.press_buf_i)
 
-        cl.enqueue_copy(queue, self.press, self.press_buf_o).wait()
+        print (frame, sum(sum(self.press)))
 
         # Push new frame
         self.ax.imshow(self.press)
