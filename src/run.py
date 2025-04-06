@@ -4,17 +4,7 @@ from matplotlib.animation import FuncAnimation
 import pyopencl as cl
 
 from simulator import Simulator
-
-# Defines
-# Physics:
-TIME_STEP = 0.001
-
-
-# Space
-WIDTH = 25
-HEIGHT = WIDTH
-
-KERN = 'sims/pressure.cl'
+from config import *
 
 
 # OpenCL
@@ -59,9 +49,10 @@ program = cl.Program(context, kernel_code).build()
 # Setup graph
 fig, ax = plt.subplots()
 
-simu = Simulator()
+simu = Simulator(press0, ax)
 
 # Rendering
-# ani = FuncAnimation(fig, simu.update_sim, frames=100, interval=50, blit=True)
-im = ax.imshow(press0)
+ani = FuncAnimation(fig, simu.update_sim, frames=100, interval=500, blit=True)
+# im = ax.imshow(ani)
+
 plt.show()
