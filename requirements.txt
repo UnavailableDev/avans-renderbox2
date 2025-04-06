@@ -1,0 +1,8 @@
+narwhals==1.33.0
+numpy==2.2.4
+packaging==24.2
+platformdirs==4.3.7
+plotly==6.0.1
+pyopencl==2025.1
+pytools==2025.1.2
+typing_extensions==4.13.1
