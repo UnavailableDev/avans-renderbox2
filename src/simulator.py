@@ -8,6 +8,7 @@ class Simulator:
     def __init__(self, map, plt):
         self.press = map
         self.ax = plt
+        self.ax.imshow(self.press) #show init state
 
         # Buffers
         self.press_buf_i = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.press)
@@ -15,14 +16,14 @@ class Simulator:
 
 
     def update_sim(self, frame):
-        program.upd_pressure(queue, (num_cells,), None, self.press_buf_i, self.press_buf_o, np.int32(WIDTH), np.int32(HEIGHT), np.float32(1))
+        # Push last frame
+        self.ax.imshow(self.press)
+
+        program.upd_pressure(queue, (WIDTH,HEIGHT), None, self.press_buf_i, self.press_buf_o, np.int32(WIDTH), np.int32(HEIGHT), np.float32(1))
         cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o).wait()
         cl.enqueue_copy(queue, self.press, self.press_buf_i)
 
         print (frame, sum(sum(self.press)))
-
-        # Push new frame
-        self.ax.imshow(self.press)
         return 
 
 

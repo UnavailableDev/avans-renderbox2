@@ -24,7 +24,7 @@ num_v = num_cells
 
 
 #load map_dat
-press0 = np.zeros((WIDTH,HEIGHT), dtype=np.float32)
+press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 
 # for n in range(5):
 #     high = 30
@@ -35,7 +35,7 @@ press0 = np.zeros((WIDTH,HEIGHT), dtype=np.float32)
 #     press0[n+10][14] = high
 
 for i in range(HEIGHT):
-    press0[13][i] = 30
+    press0[i][15] = 30
 
 
 # Buffers

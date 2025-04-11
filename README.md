@@ -2,7 +2,7 @@
 
 ## TODO
 - [x] POC => Pressure dispersion (4h)
-   - [ ] Debug
+   - [x] Debug (1h)
 - [ ] Sink/Source/Object
 - [?] file loading
 

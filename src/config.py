@@ -5,7 +5,7 @@ TIME_STEP = 0.001
 
 # Space
 WIDTH = 25
-HEIGHT = WIDTH
+HEIGHT = 30
 
 # init space
 num_cells = WIDTH * HEIGHT
