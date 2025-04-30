@@ -5,12 +5,14 @@ from config import *
 import time
 
 class Simulator:
-    def __init__(self, map, plt):
-        self.press = map
+    def __init__(self, map, press, plt):
+        self.map_data = map
+        self.press = press
         self.ax = plt
         self.ax.imshow(self.press) #show init state
 
         # Buffers
+        self.map_buff = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.map_data)
         self.press_buf_i = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.press)
         self.press_buf_o = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.press)
 

@@ -27,7 +27,7 @@ num_cells = WIDTH * HEIGHT
 num_u = num_cells
 num_v = num_cells
 
-# init space
+# init sim values
 press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 
 # for n in range(5):
@@ -41,20 +41,13 @@ press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 # for i in range(HEIGHT):
 #     press0[i][15] = 30
 
-
-# Buffers
-mf = cl.mem_flags
-press_buf_i = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=press0)
-press_buf_o = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=press0)
-
-
 # Compile kernel
 program = cl.Program(context, kernel_code).build()
 
 # Setup graph
 fig, ax = plt.subplots()
 
-simu = Simulator(press0, ax)
+simu = Simulator(map_data, press0, ax)
 
 # Rendering
 ani = FuncAnimation(fig, simu.update_sim, frames=5, interval=1500, blit=False)
