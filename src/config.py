@@ -12,4 +12,5 @@ num_cells = WIDTH * HEIGHT
 num_u = num_cells
 num_v = num_cells
 
+FILE_PATH = "output.txt"
 KERN = 'sims/pressure.cl'

@@ -4,6 +4,7 @@ from matplotlib.animation import FuncAnimation
 import pyopencl as cl
 
 from simulator import Simulator
+from load import load_map
 from config import *
 
 
@@ -16,14 +17,17 @@ device = platform.get_devices()[0]
 context = cl.Context([device])
 queue = cl.CommandQueue(context)
 
+#load map_dat
+map_data = load_map(FILE_PATH)
 
-# init space
+# Constants
+WIDTH = map_data.shape[1]
+HEIGHT = map_data.shape[0]
 num_cells = WIDTH * HEIGHT
 num_u = num_cells
 num_v = num_cells
 
-
-#load map_dat
+# init space
 press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 
 # for n in range(5):
@@ -34,8 +38,8 @@ press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 #     press0[n+10][13] = high
 #     press0[n+10][14] = high
 
-for i in range(HEIGHT):
-    press0[i][15] = 30
+# for i in range(HEIGHT):
+#     press0[i][15] = 30
 
 
 # Buffers
