@@ -27,6 +27,8 @@ num_cells = WIDTH * HEIGHT
 num_u = num_cells
 num_v = num_cells
 
+print("Map data shape:", map_data.shape)
+
 # init sim values
 press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 
@@ -40,6 +42,11 @@ press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 
 # for i in range(HEIGHT):
 #     press0[i][15] = 30
+
+for x in range(HEIGHT):
+    for y in range(WIDTH):
+        if map_data[x][y] == 1:
+            press0[x][y] = 30
 
 # Compile kernel
 program = cl.Program(context, kernel_code).build()

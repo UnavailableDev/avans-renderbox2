@@ -4,13 +4,12 @@ TIME_STEP = 0.001
 
 
 # Space
-WIDTH = 25
-HEIGHT = 30
+
 
 # init space
-num_cells = WIDTH * HEIGHT
-num_u = num_cells
-num_v = num_cells
+# num_cells = WIDTH * HEIGHT
+# num_u = num_cells
+# num_v = num_cells
 
 FILE_PATH = "output.txt"
 KERN = 'sims/pressure.cl'
