@@ -1,5 +1,6 @@
 import numpy as np
 import pyopencl as cl
+import matplotlib as mpl
 from config import *
 
 import time
@@ -11,7 +12,8 @@ class Simulator:
         self.HEIGHT = map.shape[0]
         self.press = press
         self.ax = plt
-        self.ax.imshow(self.press) #show init state
+
+        self.ax.imshow(self.press, vmin=0, vmax=50) #show init state
 
         # Buffers
         self.map_buff = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.map_data)
@@ -21,7 +23,7 @@ class Simulator:
 
     def update_sim(self, frame):
         # Push last frame
-        self.ax.imshow(self.press)
+        self.ax.imshow(self.press, vmin=0, vmax=50)
 
         program.upd_pressure(queue, (self.WIDTH,self.HEIGHT), None, self.press_buf_i, self.press_buf_o, self.map_buff, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1))
         cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o).wait()

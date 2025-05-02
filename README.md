@@ -4,5 +4,6 @@
 - [x] POC => Pressure dispersion (4h)
    - [x] Debug (1h)
 - [ ] Sink/Source/Object (1h)
-- [?] file loading (2,5h)
+- [x] file loading (3h)
+- [?] speed optimization (0,5h)
 

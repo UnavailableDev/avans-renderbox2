@@ -57,7 +57,7 @@ fig, ax = plt.subplots()
 simu = Simulator(map_data, press0, ax)
 
 # Rendering
-ani = FuncAnimation(fig, simu.update_sim, frames=5, interval=1500, blit=False)
+ani = FuncAnimation(fig, simu.update_sim, frames=500, interval=1, blit=False)
 # im = ax.imshow(ani)
 
 plt.show()
