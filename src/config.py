@@ -12,4 +12,4 @@ TIME_STEP = 0.001
 # num_v = num_cells
 
 FILE_PATH = "output.txt"
-KERN = 'sims/pressure.cl'
+KERN = 'sims/gpt_flow.cl'

@@ -43,11 +43,11 @@ press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
 # for i in range(HEIGHT):
 #     press0[i][15] = 30
 
-for x in range(HEIGHT):
-    for y in range(WIDTH):
-        if map_data[x][y] == 1:
-            # press0[x][y] = x*y
-            press0[x][y] = np.random.randint(0, 50)
+# for x in range(HEIGHT):
+#     for y in range(WIDTH):
+#         if map_data[x][y] == 1:
+#             # press0[x][y] = x*y
+#             press0[x][y] = np.random.randint(0, 50)
 
 # Compile kernel
 program = cl.Program(context, kernel_code).build()
@@ -58,7 +58,7 @@ fig, ax = plt.subplots()
 simu = Simulator(map_data, press0, ax)
 
 # Rendering
-ani = FuncAnimation(fig, simu.update_sim, frames=500, interval=1500, blit=False)
+ani = FuncAnimation(fig, simu.update_sim, frames=1000, interval=15, blit=False)
 # im = ax.imshow(ani)
 
 plt.show()
