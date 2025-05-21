@@ -14,6 +14,7 @@
 - [ ] Updated pressure math
 - [x] png loading (1h)
 - [ ] config/debugging (3h)
+- [ ] switching draw-call for performance boost (1,5h)
 
 pressure seems to be inverted when simulating with wing
 velocities are possibly not being generated at the x=0

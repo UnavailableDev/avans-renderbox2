@@ -109,12 +109,12 @@ def generate_wing_cross_section(
 # === Example Configuration ===
 if __name__ == "__main__":
    generate_wing_cross_section(
-      width=500,
+      width=700,
       height=300,
       wing_length=300,
       thickness=0.12,
       camber=0.06,
-      angle_deg=-12,
+      angle_deg=-20,
       padding_x_per=0.30,
       padding_y_per=0.05,
       output_file="wing_with_padding.png"

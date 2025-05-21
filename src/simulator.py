@@ -17,9 +17,9 @@ class Simulator:
         self.WIDTH = map.shape[1]
         self.HEIGHT = map.shape[0]
         self.press = press
-        self.velocity = np.random.rand(self.WIDTH, self.HEIGHT).astype(cl_array.vec.float2)
+        # self.velocity = np.random.rand(self.WIDTH, self.HEIGHT).astype(cl_array.vec.float2)
         # self.velocity = np.zeros((self.WIDTH, self.HEIGHT), dtype=cl_array.vec.float2)
-        # self.velocity = np.zeros((self.WIDTH, self.HEIGHT, 2), dtype=np.float32)
+        self.velocity = np.zeros((self.HEIGHT, self.WIDTH, 2), dtype=np.float32)
         self.divergence = np.zeros((self.WIDTH, self.HEIGHT), dtype=np.float32)
         self.ax = plt
 
@@ -43,38 +43,40 @@ class Simulator:
         self.press_buf_o = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.press)
         self.vel_buf_i = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.velocity)
         self.vel_buf_o = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.velocity)
+        self.div = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.divergence)
         print(self.WIDTH, self.HEIGHT)
 
 
-        self.div = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.divergence)
 
         ### Preload graph
-        self.ax.imshow(self.press, vmin=0, vmax=50) #show init state
+        # self.ax.imshow(self.press, vmin=0, vmax=50) #show init state
 
         
 
     def update_sim(self, frame):
         # # Push last frame
         # if frame % 10 == 0:
-        if 1:
-            cl.enqueue_copy(queue, self.press, self.press_buf_i).wait() # Copy to update frame buffer
-            # cl.enqueue_copy(queue, self.velocity, self.vel_buf_i).wait() # Copy to update frame buffer
+        # if 1:
+            # cl.enqueue_copy(queue, self.press, self.press_buf_i).wait() # Copy to update frame buffer
             # self.ax.imshow(self.velocity, vmin=-0.5, vmax=0.5)
-            self.ax.imshow(self.press)
+            # self.ax.imshow(self.press)
             # self.ax.imshow(self.press, vmin=-2, vmax=2)
-            print(sum(sum(self.press)))
+            # # print(sum(sum(self.press)))
+            # # cl.enqueue_copy(queue, self.velocity, self.vel_buf_i).wait() # Copy to update frame buffer
+            # # self.ax.imshow(self.velocity[0:self.HEIGHT, 0:self.WIDTH, 0])
+            # return self.press
         # self.ax.imshow(self.press)
 
         program.advectVelocity(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_i, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1), np.float32(1)).wait()
         program.applyBoundary(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.interflow)).wait()
         program.computeDivergence(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.div, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
 
-        for i in range(75):
+        for i in range(25):
             # Swap buffers
             if i % 2 == 0:
-                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_o, self.press_buf_i, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.25), np.float32(0.25)).wait()
+                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_o, self.press_buf_i, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.25), np.float32(0.25))
             else:
-                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.25), np.float32(0.25))
+                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.25), np.float32(0.25)).wait()
         
             # cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o).wait()
             # program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.225), np.float32(0.25))
@@ -84,10 +86,14 @@ class Simulator:
         program.subtractPressureGradient(queue, (self.WIDTH,self.HEIGHT), None, self.press_buf_o, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
         cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o)
         cl.enqueue_copy(queue, self.vel_buf_i, self.vel_buf_o).wait() # Copy to update frame buffer
+        # cl.enqueue_copy(queue, self.velocity, self.vel_buf_o).wait()
+        cl.enqueue_copy(queue, self.press, self.press_buf_i).wait()
         # print (frame, sum(sum(self.press)))
         print (frame)
         # print (frame, sum(self.velocity[0:self.WIDTH-1][0:self.HEIGHT-1][0]))
-        return 
+        return  self.press
+        return  self.velocity
+        return
 
 
 # OpenCL

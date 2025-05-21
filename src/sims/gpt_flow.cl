@@ -159,7 +159,7 @@ __kernel void applyBoundary(
    }
 
    // Outlet: right edge
-   if (x > width - 1) {
+   if (x == width - 1) {
       velocity[idx] = (float2)(0.0f, 0.0f);
    }
    
