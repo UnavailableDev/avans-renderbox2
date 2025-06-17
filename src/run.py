@@ -6,6 +6,7 @@ import pyopencl as cl
 from simulator import Simulator
 from load import load_map
 from config import *
+from gen_wingshape import generate_wing_cross_section
 
 
 # OpenCL
@@ -67,14 +68,19 @@ program = cl.Program(context, kernel_code).build()
 import pygame
 import colorsys
 # --- Initialize Pygame ---
-SCALER = 2
+SCALER = 1
 pygame.init()
 screen = pygame.display.set_mode((WIDTH * SCALER, HEIGHT * SCALER)) 
 pygame.display.set_caption("Eulerian Fluid Simulator")
 clock = pygame.time.Clock()
 
 def render_density_field(density):
-    field = np.clip(density*4 +128, 0, 255).astype(np.uint8)
+    field = np.clip(density*128 +128, 0, 255).astype(np.uint8)
+    rgb = np.stack([field]*3, axis=-1)  # shape: (H, W, 3)
+    return rgb
+
+def render_velocity_field(velocity):
+    field = np.clip(velocity*128, 0, 255).astype(np.uint8)
     rgb = np.stack([field]*3, axis=-1)  # shape: (H, W, 3)
     return rgb
 
@@ -102,6 +108,8 @@ def velocity_to_rgb(velocity):
     return rgb_uint8
 
 simu = Simulator(map_data, press0, None)
+wing_angle = 5  # Initial angle for the wing
+wing_camber = 0.05  # Camber of the wing
 
 # Main loop
 running = True
@@ -109,12 +117,37 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RIGHT:
+                # Increase wing angle
+                wing_angle += 1
+            elif event.key == pygame.K_LEFT:
+                # Decrease wing angle
+                wing_angle -= 1
+
+            print(f"Current wing angle: {wing_angle} degrees")
+            generate_wing_cross_section(
+                width=WIDTH,
+                height=HEIGHT,
+                wing_length=200,  # Adjusted for padding
+                thickness=0.12,
+                camber=0.05,
+                angle_deg=-wing_angle,
+                padding_x_per=0.3,  # 20% padding
+                padding_y_per=0.05,  # 20% padding
+                output_file=FILE_PATH
+            )
+            map_data = load_map(FILE_PATH)
+            simu.update_map(map_data)
 
     # --- Run Simulation ---
-    field = simu.update_sim(1)  # GPU-powered in real case
+    for _ in range(1):
+        # Update simulation
+        field = simu.update_sim(_)
 
     # --- Prepare Render ---
-    rgb = render_density_field(field)
+    # rgb = render_density_field(field)
+    rgb = render_velocity_field(field)
     # rgb = velocity_to_rgb(field)
     surf = pygame.surfarray.make_surface(np.transpose(rgb, (1, 0, 2)))  # (W, H, 3)
 

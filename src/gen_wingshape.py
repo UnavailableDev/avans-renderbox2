@@ -103,18 +103,19 @@ def generate_wing_cross_section(
    draw = ImageDraw.Draw(image)
    draw.polygon(list(zip(x_img, y_img)), fill=1)
    image.save(output_file)
-   print(f"Wing cross-section saved to '{output_file}'.")
+   if __name__ == "__main__":
+      print(f"Wing cross-section saved to '{output_file}'.")
 
 
 # === Example Configuration ===
 if __name__ == "__main__":
    generate_wing_cross_section(
-      width=700,
-      height=300,
-      wing_length=300,
+      width=1400,
+      height=700,
+      wing_length=200,
       thickness=0.12,
-      camber=0.06,
-      angle_deg=-20,
+      camber=0.05,
+      angle_deg=-10,
       padding_x_per=0.30,
       padding_y_per=0.05,
       output_file="wing_with_padding.png"

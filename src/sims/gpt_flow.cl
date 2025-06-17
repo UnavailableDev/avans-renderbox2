@@ -1,5 +1,6 @@
 #define IDX(x, y, width) ((y) * (width) + (x))
 
+
 // Sample divergence of velocity field
 __kernel void computeDivergence(
    __global const float2* velocity,
@@ -19,10 +20,15 @@ __kernel void computeDivergence(
       return;
    }
 
-   float2 velL = velocity[IDX(x - 1, y, width)];
-   float2 velR = velocity[IDX(x + 1, y, width)];
-   float2 velB = velocity[IDX(x, y - 1, width)];
-   float2 velT = velocity[IDX(x, y + 1, width)];
+   // float2 velL = velocity[IDX(x - 1, y, width)];
+   // float2 velR = velocity[IDX(x + 1, y, width)];
+   // float2 velB = velocity[IDX(x, y - 1, width)];
+   // float2 velT = velocity[IDX(x, y + 1, width)];
+
+   float2 velL = velocity[IDX(clamp(x - 1, 0 , width), y, width)];
+   float2 velR = velocity[IDX(clamp(x + 1, 0 , width), y, width)];
+   float2 velB = velocity[IDX(x, clamp(y + 1, 0, height), width)];
+   float2 velT = velocity[IDX(x, clamp(y - 1, 0, height), width)];
 
    float div = (velR.x - velL.x + velT.y - velB.y) / (2.0f * cellSize);
    divergence[idx] = div;
@@ -50,17 +56,18 @@ __kernel void pressureJacobi(
       return;
    }
 
-   float pL = pressureIn[IDX(x - 1, y, width)];
-   float pR = pressureIn[IDX(x + 1, y, width)];
-   float pB = pressureIn[IDX(x, y - 1, width)];
-   float pT = pressureIn[IDX(x, y + 1, width)];
+   float pL = pressureIn[IDX(clamp(x - 1, 0, width), y, width)];
+   float pR = pressureIn[IDX(clamp(x + 1, 0, width), y, width)];
+   float pB = pressureIn[IDX(x, clamp(y + 1, 0, height), width)];
+   float pT = pressureIn[IDX(x, clamp(y - 1, 0, height), width)];
 
    float b = divergence[idx];
 
    pressureOut[idx] = (pL + pR + pB + pT - alpha * b) * rBeta;
+
 }
 
-// Subtract pressure gradient from velocity
+// Make fluid simulation incompressible by subtracting pressure gradient from velocity
 __kernel void subtractPressureGradient(
    __global const float* pressure,
    __global float2* velocity,
@@ -79,10 +86,10 @@ __kernel void subtractPressureGradient(
       return;
    }
 
-   float pL = pressure[IDX(x - 1, y, width)];
-   float pR = pressure[IDX(x + 1, y, width)];
-   float pB = pressure[IDX(x, y - 1, width)];
-   float pT = pressure[IDX(x, y + 1, width)];
+   float pL = pressure[IDX(clamp(x - 1, 0, width), y, width)];
+   float pR = pressure[IDX(clamp(x + 1, 0, width), y, width)];
+   float pB = pressure[IDX(x, clamp(y + 1, 0, height), width)];
+   float pT = pressure[IDX(x, clamp(y - 1, 0, height), width)];
 
    float2 vel = velocity[idx];
    vel.x -= (pR - pL) / (2.0f * cellSize);
@@ -152,16 +159,34 @@ __kernel void applyBoundary(
       velocity[idx] = (float2)(0.0f, 0.0f);
       return;
    }
+
+   // // Outlet: right edge
+   // if (x == width - 1) {
+   //    velocity[idx] = (float2)(0.0f, 0.0f);
+   // }
+   // // if (x <= 0 || y <= 0 || x >= width-1 || y >= height-1) return;
+   
+   if (x <= 0 || y <= 0 || x >= width-1 || y >= height-1) velocity[idx] = (float2)(0.0f, 0.0f);
    // Inlet: left middle third
    // if (x == 1 && y > height / 3 && y < 2 * height / 3) {
-   if (x == 0) {
+   if (x == 0 || x == width - 1) {
       velocity[idx] = (float2)(inflowVelocity, 0.0f);
    }
+}
 
-   // Outlet: right edge
-   if (x == width - 1) {
-      velocity[idx] = (float2)(0.0f, 0.0f);
-   }
-   
+__kernel void abs_velocity(
+   __global const float2* velocityIn,
+   __global float* velocityOut,
+   int width,
+   int height
+) {
+   int x = get_global_id(0);
+   int y = get_global_id(1);
+
+   int idx = IDX(x, y, width);
    if (x <= 0 || y <= 0 || x >= width-1 || y >= height-1) return;
+
+   // velocityOut[idx] = (velocityIn[idx].x);
+   velocityOut[idx] = log10( sqrt(exp2(velocityIn[idx].x) + exp2(velocityIn[idx].y)) ); //length of velocity vector
+   // velocityOut[idx] = (velocityIn[idx].x) + (velocityIn[idx].y); //float abs value of velocity
 }

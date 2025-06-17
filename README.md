@@ -4,8 +4,8 @@
 - [x] POC => Pressure dispersion (4h)
    - [x] Debug (1h)
 - [ ] Sink/ [ ]Source/ [x]Object (1h)
-- [x] file loading (3h)
-- [?] speed optimization (0,5h)
+- [x] file loading (5h)
+- [?] speed optimization (2,5h)
 - [ ] Velocities (4h)
    - [ ] update(gravity)
    - [ ] Divergence (incompressibility)
@@ -13,7 +13,8 @@
    - [ ] Overrelexation
 - [ ] Updated pressure math
 - [x] png loading (1h)
-- [ ] config/debugging (3h)
+- [ ] config/debugging (8h)
+- [x] Realtime map updates (wind rot left & right arrow keys) (3h)
 - [ ] switching draw-call for performance boost (1,5h)
 
 pressure seems to be inverted when simulating with wing

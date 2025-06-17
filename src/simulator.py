@@ -9,7 +9,7 @@ import time
 class Simulator:
     def __init__(self, map, press, plt):
         ### Constants
-        self.interflow = 50.0
+        self.interflow = 5.0
         self.cellsize = 1.0
 
         ### Variables
@@ -21,7 +21,12 @@ class Simulator:
         # self.velocity = np.zeros((self.WIDTH, self.HEIGHT), dtype=cl_array.vec.float2)
         self.velocity = np.zeros((self.HEIGHT, self.WIDTH, 2), dtype=np.float32)
         self.divergence = np.zeros((self.WIDTH, self.HEIGHT), dtype=np.float32)
+        self.display = np.zeros((self.WIDTH, self.HEIGHT), dtype=np.float32)
         self.ax = plt
+
+        for x in range(self.WIDTH):
+            for y in range(self.HEIGHT):
+                self.velocity[y][x][0] = self.interflow
 
 
         ### Wind Tunnel Inlet (middle third of left boundary)
@@ -44,6 +49,7 @@ class Simulator:
         self.vel_buf_i = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.velocity)
         self.vel_buf_o = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.velocity)
         self.div = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.divergence)
+        self.displ_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.display)
         print(self.WIDTH, self.HEIGHT)
 
 
@@ -51,7 +57,10 @@ class Simulator:
         ### Preload graph
         # self.ax.imshow(self.press, vmin=0, vmax=50) #show init state
 
-        
+    def update_map(self, map):
+        self.map_data = map
+        cl.enqueue_copy(queue, self.map_buf, self.map_data).wait()
+
 
     def update_sim(self, frame):
         # # Push last frame
@@ -71,12 +80,12 @@ class Simulator:
         program.applyBoundary(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.interflow)).wait()
         program.computeDivergence(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.div, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
 
-        for i in range(25):
+        for i in range(26):
             # Swap buffers
             if i % 2 == 0:
-                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_o, self.press_buf_i, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.25), np.float32(0.25))
+                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_o, self.press_buf_i, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(ALPHA), np.float32(R_BETA)).wait()
             else:
-                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.25), np.float32(0.25)).wait()
+                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(ALPHA), np.float32(R_BETA)).wait()
         
             # cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o).wait()
             # program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(1.225), np.float32(0.25))
@@ -86,13 +95,15 @@ class Simulator:
         program.subtractPressureGradient(queue, (self.WIDTH,self.HEIGHT), None, self.press_buf_o, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
         cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o)
         cl.enqueue_copy(queue, self.vel_buf_i, self.vel_buf_o).wait() # Copy to update frame buffer
-        # cl.enqueue_copy(queue, self.velocity, self.vel_buf_o).wait()
-        cl.enqueue_copy(queue, self.press, self.press_buf_i).wait()
+        program.abs_velocity(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_i, self.displ_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT)).wait()
+        cl.enqueue_copy(queue, self.press, self.displ_buf).wait()
+        # cl.enqueue_copy(queue, self.press, self.press_buf_i).wait()
         # print (frame, sum(sum(self.press)))
-        print (frame)
+        # print (frame)
         # print (frame, sum(self.velocity[0:self.WIDTH-1][0:self.HEIGHT-1][0]))
+        # return  self.display
         return  self.press
-        return  self.velocity
+        # return  self.velocity
         return
 
 
