@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import pyopencl as cl
+import pygame
 
 from simulator import Simulator
 from load import load_map
@@ -36,20 +37,7 @@ press0 = np.ones((HEIGHT,WIDTH), dtype=np.float32)
 # Compile kernel
 program = cl.Program(context, kernel_code).build()
 
-# # Setup graph
-# fig, ax = plt.subplots()
 
-# simu = Simulator(map_data, ax)
-
-# # Rendering
-# ani = FuncAnimation(fig, simu.update_sim, frames=1000, interval=15, blit=False)
-# # im = ax.imshow(ani)
-
-# plt.show()
-
-
-import pygame
-import colorsys
 # --- Initialize Pygame ---
 SCALER = 1
 pygame.init()
@@ -58,37 +46,15 @@ pygame.display.set_caption("Eulerian Fluid Simulator")
 clock = pygame.time.Clock()
 
 def render_density_field(density):
-    field = np.clip(density*128 +128, 0, 255).astype(np.uint8)
+    field = np.clip(density*8 +128, 0, 255).astype(np.uint8)
     rgb = np.stack([field]*3, axis=-1)  # shape: (H, W, 3)
     return rgb
 
 def render_velocity_field(velocity):
-    field = np.clip(velocity*128, 0, 255).astype(np.uint8)
+    field = np.clip(velocity*32, 0, 255).astype(np.uint8)
     rgb = np.stack([field]*3, axis=-1)  # shape: (H, W, 3)
     return rgb
 
-def velocity_to_rgb(velocity):
-    """Convert a 2D velocity vector field to an RGB image using HSV coloring."""
-    vx = velocity[..., 0]
-    vy = velocity[..., 1]
-    angle = np.arctan2(vy, vx)  # [-π, π]
-    magnitude = np.sqrt(vx**2 + vy**2)
-    norm_mag = np.clip(magnitude / magnitude.max(), -1.0, 1.0)
-
-    hue = (angle + np.pi) / (2 * np.pi)  # [0,1]
-    sat = np.ones_like(hue)
-    val = norm_mag
-
-    # Convert HSV to RGB (vectorized)
-    hsv = np.stack([hue, sat, val], axis=-1)
-    rgb = np.zeros_like(hsv)
-
-    for i in range(hsv.shape[0]):
-        for j in range(hsv.shape[1]):
-            rgb[i, j] = colorsys.hsv_to_rgb(*hsv[i, j])
-
-    rgb_uint8 = (rgb * 255).astype(np.uint8)
-    return rgb_uint8
 
 simu = Simulator(map_data, None)
 wing_angle = 5  # Initial angle for the wing
@@ -112,7 +78,7 @@ while running:
             generate_wing_cross_section(
                 width=WIDTH,
                 height=HEIGHT,
-                wing_length=500,  # Adjusted for padding
+                wing_length=200,  # Adjusted for padding
                 thickness=0.12,
                 # camber=0.05,
                 camber=0.0,

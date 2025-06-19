@@ -40,10 +40,10 @@ __kernel void computeDivergence(
    // float2 velB = velocity[IDX(x, y - 1, width)];
    // float2 velT = velocity[IDX(x, y + 1, width)];
 
-   float2 velL = velocity[IDX(clamp(x - 1, 0 , width), y, width)];
-   float2 velR = velocity[IDX(clamp(x + 1, 0 , width), y, width)];
-   float2 velB = velocity[IDX(x, clamp(y + 1, 0, height), width)];
-   float2 velT = velocity[IDX(x, clamp(y - 1, 0, height), width)];
+   float2 velL = velocity[IDX(x - 1, y, width)];
+   float2 velR = velocity[IDX(x + 1, y, width)];
+   float2 velB = velocity[IDX(x, y + 1, width)];
+   float2 velT = velocity[IDX(x, y - 1, width)];
 
    float div = (velR.x - velL.x + velT.y - velB.y) / (2.0f * cellSize);
    // float div = (velR.x - velL.x + velT.y - velB.y);
@@ -59,30 +59,31 @@ __kernel void pressureJacobi(
    __global const float* solidMask,
    int width,
    int height,
-   float alpha,
+   float cellSize,
    float rBeta)
 {
    int x = get_global_id(0);
    int y = get_global_id(1);
 
    int idx = IDX(x, y, width);
-   if (x <= 0 || y <= 0 || x >= width-1 || y >= height-1) return;
+   if (x <= 0 || y <= 0 || x >= width-1 || y >= height-1) return; // Ensure all values are within bounds
    if (solidMask[idx] > 0.5f) {
       pressureOut[idx] = 0.0f;
       return;
    }
 
-   float pL = pressureIn[IDX(clamp(x - 1, 0, width), y, width)];
-   float pR = pressureIn[IDX(clamp(x + 1, 0, width), y, width)];
-   float pB = pressureIn[IDX(x, clamp(y + 1, 0, height), width)];
-   float pT = pressureIn[IDX(x, clamp(y - 1, 0, height), width)];
+   float pL = pressureIn[IDX(x - 1, y, width)];
+   float pR = pressureIn[IDX(x + 1, y, width)];
+   float pB = pressureIn[IDX(x, y + 1, width)];
+   float pT = pressureIn[IDX(x, y - 1, width)];
 
    float b = divergence[idx];
 
-   float cellSize = 1.0f;
-   // pressureOut[idx] = 0.25f * (pL + pR + pB + pT - exp2(cellSize) * b);
-   float pressure = 0.25f * (pL + pR + pB + pT - exp2(cellSize) * b);
-   pressureOut[idx] = pressure - 0.1f * pressure ;
+   // float alpha = -exp2(cellSize);
+   // float alpha = 1;
+   pressureOut[idx] = 0.25f * (pL + pR + pB + pT - exp2(cellSize) * b);
+   // float pressure = 0.25f * (pL + pR + pB + pT - exp2(cellSize) * b);
+   // pressureOut[idx] = pressure - 0.1f * pressure ;
    // pressureOut[idx] = (pL + pR + pB + pT - alpha * b) * rBeta;
    // if (y == 50) pressureOut[idx] = 30.0f; // Boundary condition: top row is zero pressure
 }
@@ -106,10 +107,10 @@ __kernel void subtractPressureGradient(
       return;
    }
 
-   float pL = pressure[IDX(clamp(x - 1, 0, width), y, width)];
-   float pR = pressure[IDX(clamp(x + 1, 0, width), y, width)];
-   float pB = pressure[IDX(x, clamp(y + 1, 0, height), width)];
-   float pT = pressure[IDX(x, clamp(y - 1, 0, height), width)];
+   float pL = pressure[IDX(x - 1, y, width)];
+   float pR = pressure[IDX(x + 1, y, width)];
+   float pB = pressure[IDX(x, y + 1, width)];
+   float pT = pressure[IDX(x, y - 1, width)];
 
    float2 vel = velocity[idx];
    vel.x -= (pR - pL) / (2.0f * cellSize);
@@ -181,6 +182,9 @@ __kernel void applyForce(
    }
    
    // if (x <= 0 || y <= 0 || x >= width-1 || y >= height-1) velocity[idx] = (float2)(0.0f, 0.0f); // Removes access velocity at end
+   if (y == 0 || y == height - 1) {
+      velocity[idx].y = 0.0f; // Top and bottom rows are zero velocity
+   }
    if (x == 0 /*|| x == width - 1*/) {
       velocity[idx] = (float2)(inflowVelocity, 0.0f);
    }
@@ -204,15 +208,15 @@ __kernel void smoothPressure(
       return;
    }
 
-   float pTL = pressureIn[IDX(clamp(x - 1, 0, width), clamp(y - 1, 0, height), width)];
-   float pTR = pressureIn[IDX(clamp(x + 1, 0, width), clamp(y - 1, 0, height), width)];
-   float pBL = pressureIn[IDX(clamp(x - 1, 0, width), clamp(y + 1, 0, height), width)];
-   float pBR = pressureIn[IDX(clamp(x + 1, 0, width), clamp(y + 1, 0, height), width)];
+   float pTL = pressureIn[IDX(x - 1, y - 1, width)];
+   float pTR = pressureIn[IDX(x + 1, y - 1, width)];
+   float pBL = pressureIn[IDX(x - 1, y + 1, width)];
+   float pBR = pressureIn[IDX(x + 1, y + 1, width)];
 
-   float pL = pressureIn[IDX(clamp(x - 1, 0, width), y, width)];
-   float pR = pressureIn[IDX(clamp(x + 1, 0, width), y, width)];
-   float pB = pressureIn[IDX(x, clamp(y + 1, 0, height), width)];
-   float pT = pressureIn[IDX(x, clamp(y - 1, 0, height), width)];
+   float pL = pressureIn[IDX(x - 1, y, width)];
+   float pR = pressureIn[IDX(x + 1, y, width)];
+   float pB = pressureIn[IDX(x, y + 1, width)];
+   float pT = pressureIn[IDX(x, y - 1, width)];
 
    // pressureOut[idx] = (pL + pR + pB + pT + pTL + pTR + pBL + pBR) / 8; // Simple averaging
    pressureOut[idx] = pressureIn[idx] + 0.2f * (pL + pR + pB + pT - 4 * pressureIn[idx]); // Laplacian smoothing
@@ -231,8 +235,7 @@ __kernel void abs_velocity(
    if (x <= 0 || y <= 0 || x >= width-1 || y >= height-1) return;
 
    // velocityOut[idx] = (velocityIn[idx].y);
-   velocityOut[idx] = log10( sqrt(exp2(velocityIn[idx].x) + exp2(velocityIn[idx].y)) )/2; //length of velocity vector
-   // velocityOut[idx] = (velocityIn[idx].x) + (velocityIn[idx].y); //float abs value of velocity
+   velocityOut[idx] = log10( sqrt(exp2(velocityIn[idx].x) + exp2(velocityIn[idx].y)) ); //length of velocity vector
 }
 
 __kernel void g_velocity(

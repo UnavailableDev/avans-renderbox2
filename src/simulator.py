@@ -16,13 +16,13 @@ class Simulator:
         self.WIDTH = map.shape[1]
         self.HEIGHT = map.shape[0]
         self.press = np.ones((self.HEIGHT,self.WIDTH), dtype=np.float32)
+        self.press0 = self.press
         # self.velocity = np.random.rand(self.WIDTH, self.HEIGHT).astype(cl_array.vec.float2)
         # self.velocity = np.zeros((self.WIDTH, self.HEIGHT), dtype=cl_array.vec.float2)
         self.velocity = np.zeros((self.HEIGHT, self.WIDTH, 2), dtype=np.float32)
         self.divergence = np.zeros((self.HEIGHT, self.WIDTH), dtype=np.float32)
         self.display = np.zeros((self.HEIGHT,self.WIDTH), dtype=np.float32)  # Display buffer for visualization
         # self.rgb_display = np.zeros((self.HEIGHT, self.WIDTH, 3), dtype=np.uint8)
-        # self.ax = plt
 
         for x in range(self.WIDTH):
             for y in range(self.HEIGHT):
@@ -37,10 +37,6 @@ class Simulator:
         self.div = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.divergence)
         self.displ_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.display)
         # self.rgb_displ_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=self.rgb_display)
-        # print(self.WIDTH, self.HEIGHT)
-
-        ### Preload graph
-        # self.ax.imshow(self.press, vmin=0, vmax=50) #show init state
 
 
     def update_map(self, map):
@@ -49,37 +45,23 @@ class Simulator:
 
 
     def update_sim(self, output_mode):
-        # # Push last frame
-        # if frame % 10 == 0:
-        # if 1:
-            # cl.enqueue_copy(queue, self.press, self.press_buf_i).wait() # Copy to update frame buffer
-            # self.ax.imshow(self.velocity, vmin=-0.5, vmax=0.5)
-            # self.ax.imshow(self.press)
-            # self.ax.imshow(self.press, vmin=-2, vmax=2)
-            # # print(sum(sum(self.press)))
-            # # cl.enqueue_copy(queue, self.velocity, self.vel_buf_i).wait() # Copy to update frame buffer
-            # # self.ax.imshow(self.velocity[0:self.HEIGHT, 0:self.WIDTH, 0])
-            # return self.press
-        # self.ax.imshow(self.press)
 
         program.advectVelocity(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_i, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(0.1), np.float32(self.cellsize)).wait()
         program.applyForce(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(FLOW_SPEED)).wait()
         program.computeDivergence(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.div, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
 
-        for i in range(40): # n itterations MUST be even
-            # Swap buffers
-            if i % 2 == 0:
-                # program.computeDivergence(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.div, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
-                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(ALPHA), np.float32(R_BETA)).wait()
-            else:
-                # program.computeDivergence(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.div, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
-                program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_o, self.press_buf_i, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(ALPHA), np.float32(R_BETA)).wait()
+
+        for i in range(40): # n * 2 itterations
+            program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize), np.float32(R_BETA)).wait()
+            # else:
+            program.pressureJacobi(queue, (self.WIDTH,self.HEIGHT), None, self.div, self.press_buf_o, self.press_buf_i, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize), np.float32(R_BETA)).wait()
         
-        program.smoothPressure(queue, (self.WIDTH,self.HEIGHT), None, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize)).wait()        
+        # program.smoothPressure(queue, (self.WIDTH,self.HEIGHT), None, self.press_buf_i, self.press_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize)).wait()        
 
         program.subtractPressureGradient(queue, (self.WIDTH,self.HEIGHT), None, self.press_buf_o, self.vel_buf_o, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
         cl.enqueue_copy(queue, self.press_buf_i, self.press_buf_o)
         cl.enqueue_copy(queue, self.vel_buf_i, self.vel_buf_o).wait()
+        program.computeDivergence(queue, (self.WIDTH,self.HEIGHT), None, self.vel_buf_o, self.div, self.map_buf, np.int32(self.WIDTH), np.int32(self.HEIGHT), np.float32(self.cellsize))
 
         if output_mode == 0:
             cl.enqueue_copy(queue, self.display, self.press_buf_i).wait()

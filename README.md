@@ -8,14 +8,11 @@
 - [?] speed optimization (2,5h)
 - [x] Velocities (4h)
 - [x] png loading (3h)
-- [ ] config/debugging (14h)
+- [ ] config/debugging (13h)
 - [x] refactoring Jacobi itterator (10h)
 - [x] Realtime map updates (wind rot left & right arrow keys) (3h)
 - [x] switching draw-call for performance boost (1,5h)
 
-- [ ] documentation updates
+- [ ] documentation updates (2h)
 
-
-pressure seems to be inverted when simulating with wing
-velocities are possibly not being generated at the x=0
-random vel init causes neat solution with 0 vel init doing nothing at all
+total: 49 hours
