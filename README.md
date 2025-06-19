@@ -3,19 +3,18 @@
 ## TODO
 - [x] POC => Pressure dispersion (4h)
    - [x] Debug (1h)
-- [ ] Sink/ [ ]Source/ [x]Object (1h)
+- [x]Object (1h)
 - [x] file loading (5h)
 - [?] speed optimization (2,5h)
-- [ ] Velocities (4h)
-   - [ ] update(gravity)
-   - [ ] Divergence (incompressibility)
-   - [ ] Advection
-   - [ ] Overrelexation
-- [ ] Updated pressure math
-- [x] png loading (1h)
-- [ ] config/debugging (8h)
+- [x] Velocities (4h)
+- [x] png loading (3h)
+- [ ] config/debugging (14h)
+- [x] refactoring Jacobi itterator (10h)
 - [x] Realtime map updates (wind rot left & right arrow keys) (3h)
-- [ ] switching draw-call for performance boost (1,5h)
+- [x] switching draw-call for performance boost (1,5h)
+
+- [ ] documentation updates
+
 
 pressure seems to be inverted when simulating with wing
 velocities are possibly not being generated at the x=0

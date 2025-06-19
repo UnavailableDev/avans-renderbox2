@@ -31,24 +31,7 @@ num_v = num_cells
 print("Map data shape:", map_data.shape)
 
 # init sim values
-press0 = np.zeros((HEIGHT,WIDTH), dtype=np.float32)
-
-# for n in range(5):
-#     high = 30
-#     press0[n+10][10] = high
-#     press0[n+10][11] = high
-#     press0[n+10][12] = high
-#     press0[n+10][13] = high
-#     press0[n+10][14] = high
-
-# for i in range(HEIGHT):
-#     press0[i][15] = 30
-
-# for x in range(HEIGHT):
-#     for y in range(WIDTH):
-#         if map_data[x][y] == 1:
-#             # press0[x][y] = x*y
-#             press0[x][y] = np.random.randint(0, 50)
+press0 = np.ones((HEIGHT,WIDTH), dtype=np.float32)
 
 # Compile kernel
 program = cl.Program(context, kernel_code).build()
@@ -56,7 +39,7 @@ program = cl.Program(context, kernel_code).build()
 # # Setup graph
 # fig, ax = plt.subplots()
 
-# simu = Simulator(map_data, press0, ax)
+# simu = Simulator(map_data, ax)
 
 # # Rendering
 # ani = FuncAnimation(fig, simu.update_sim, frames=1000, interval=15, blit=False)
@@ -107,7 +90,7 @@ def velocity_to_rgb(velocity):
     rgb_uint8 = (rgb * 255).astype(np.uint8)
     return rgb_uint8
 
-simu = Simulator(map_data, press0, None)
+simu = Simulator(map_data, None)
 wing_angle = 5  # Initial angle for the wing
 wing_camber = 0.05  # Camber of the wing
 
@@ -129,9 +112,10 @@ while running:
             generate_wing_cross_section(
                 width=WIDTH,
                 height=HEIGHT,
-                wing_length=200,  # Adjusted for padding
+                wing_length=500,  # Adjusted for padding
                 thickness=0.12,
-                camber=0.05,
+                # camber=0.05,
+                camber=0.0,
                 angle_deg=-wing_angle,
                 padding_x_per=0.3,  # 20% padding
                 padding_y_per=0.05,  # 20% padding
@@ -140,15 +124,20 @@ while running:
             map_data = load_map(FILE_PATH)
             simu.update_map(map_data)
 
+
     # --- Run Simulation ---
     for _ in range(1):
         # Update simulation
-        field = simu.update_sim(_)
+        field = simu.update_sim(DISPLAY_MODE)
 
     # --- Prepare Render ---
-    # rgb = render_density_field(field)
-    rgb = render_velocity_field(field)
-    # rgb = velocity_to_rgb(field)
+    if DISPLAY_MODE == 0:
+        rgb = render_density_field(field)
+    elif DISPLAY_MODE == 1:
+        rgb = render_density_field(field)
+    elif DISPLAY_MODE == 2:
+        rgb = render_velocity_field(field)
+
     surf = pygame.surfarray.make_surface(np.transpose(rgb, (1, 0, 2)))  # (W, H, 3)
 
     # --- Draw ---
